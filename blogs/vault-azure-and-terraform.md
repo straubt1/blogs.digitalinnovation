@@ -375,7 +375,7 @@ azurerm_resource_group.test: Creating...
   name:             "" => "terraform-vault-rf"
   tags.%:           "" => "1"
   tags.environment: "" => "Production"
-azurerm_resource_group.test: Creation complete after 1s (ID: /subscriptions/27e9ff76-ce7b-4176-b2bb-...c999/resourceGroups/terraform-vault-rf)
+azurerm_resource_group.test: Creation complete after 1s (ID: /subscriptions/<Subscriptio Id>/resourceGroups/terraform-vault-rf)
 
 Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 ```
