@@ -4,6 +4,10 @@ title: Blogs on Blogs
 description: This is a place for blogs.
 ---
 
+### [Using Vault, Terraform, and Azure - Dynamic Service Principals](./blogs/vault-azure-and-terraform)
+
+by: Tom Straub <tom.straub@insight.com>
+
 ### [Using community providers to deploy helm charts](./blogs/terraform-communityprovider-helm) 
 
 by: Gabe Howe <gabe.howe@insight.com>

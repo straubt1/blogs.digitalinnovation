@@ -1,6 +1,6 @@
 ---
 layout: post
-post_title: Azure Vault Terraform
+post_title: Using Vault, Terraform, and Azure - Dynamic Service Principals
 ---
 
 A common challenge when automating Azure Cloud Infrastructure is securely authenticating to Azure when running Terraform, specifically in automation. Typically a Service Principal is used, but it can be difficult to store securely and rotate easily. In this blog we will look at how we can leverage Hashicorp Vault and its [Secrets Engine for Azure](https://www.vaultproject.io/docs/secrets/azure/index.html) to dynamically generate and revoke Service Principals in Azure.
