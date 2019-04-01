@@ -7,7 +7,7 @@ A common challenge when automating Azure Cloud Infrastructure is securely authen
 
 ## Start Vault
 
-First things first, we need a running Vault server. This can easily be done by downloading and running the Vault binary. For the sake of this blog we will run in `-dev` mode which will give us a vault instance that will be running and unsealed.
+First things first, we need a running Vault server. This can easily be done by downloading and running the Vault binary. For the sake of this blog we will run in `-dev` mode which will give us a Vault instance that will be running and unsealed.
 
 ```sh
 $ vault server -dev
@@ -67,7 +67,7 @@ HA Enabled      false
 
 ## Create a Vault Service Principal
 
-In order for vault to have permissions to dynamically generate Service Principals, it needs a Service Principal of its own. We will call this the "Vault Service Principal".
+In order for Vault to have permissions to dynamically generate Service Principals, it needs a Service Principal of its own. We will call this the "Vault Service Principal".
 The Azure CLI makes this really easy, however there are additional steps.
 
 Create the Service Principal and give it scope over your subscription in one command:
@@ -100,7 +100,7 @@ Once this is complete, your Vault Service Principal is ready to be used.
 
 ## Configure Vault
 
-Configuring vault to use the [Secrets Engine for Azure](https://www.vaultproject.io/docs/secrets/azure/index.html) using the Vault Service Principal.
+Configuring Vault to use the [Secrets Engine for Azure](https://www.vaultproject.io/docs/secrets/azure/index.html) using the Vault Service Principal.
 
 For ease of demonstration, set the following environment variables with their appropriate values:
 
@@ -136,7 +136,7 @@ $ vault write azure/config \
 Success! Data written to: azure/config
 ```
 
-The final step is to create a few roles that will give use varying levels of control of our subscription; one for read only, the other that allows writes.
+The final step is to create a few roles that will give us varying levels of control of our subscription; one for read only, the other that allows writes.
 
 ```sh
 $ vault write azure/roles/reader ttl=1h \
@@ -166,8 +166,8 @@ Success! Data written to: azure/roles/contributor
 
 ## Working with Terraform
 
-Before we create a Service Principal, let's query Azure to see what is currently out there.
-Using the `az cli` query syntax we can get all Service Principals with the prefix of "vault-", which is what the Secrets Engine will create, expecting to get nothing back since we haven't requested anything yet.
+Before we create a Service Principal, let's query Azure to see what currently exists.
+Using the `az cli` query syntax we can get all Service Principals with the prefix of "vault-". This is what the Secrets Engine will create. We haven't requested any new Service Principals yet, so we don't expect to have any results returned from the query.
 
 > This also assumes that you do not have any other Service Principals in your organization the prefix with "vault-"
 
@@ -185,7 +185,7 @@ $ az ad app list --query "[?starts_with(displayName, 'vault-')].{Name:displayNam
 <no results to list>
 ```
 
-As we can see there are no Service Principals yet, let's create one now! This can be done by calling the HTTP API directly or you can use the vault cli:
+As we can see there are no Service Principals yet. Let's create one now! This can be done by calling the HTTP API directly or you can use the vault cli:
 
 ```sh
 $ vault read azure/creds/reader
@@ -245,7 +245,7 @@ Now that we have seen how the core functionality works with Vault and Azure, let
 
 ## Terraform
 
-A common solution found in automation that runs Terraform to manage Azure infrastructure is to set environment variables before Terraform runs.
+A common solution found in automation that runs Terraform to manage Azure infrastructure, is to set environment variables before Terraform runs.
 
 ```sh
 $ export ARM_CLIENT_ID="00000000-0000-0000-0000-000000000000"
@@ -262,7 +262,7 @@ Let's look at a simple Terraform configuration example that creates a simple res
 
 ```hcl
 resource "azurerm_resource_group" "test" {
-  name     = "terraform-vault-rf"
+  name     = "terraform-vault-rg"
   location = "centralus"
 
   tags {
@@ -271,11 +271,11 @@ resource "azurerm_resource_group" "test" {
 }
 ```
 
-To authenticate to Azure we will first read a secret from vault that will be satisfied by the same secrets engine we just tested.
+To authenticate to Azure we will first read a secret from Vault that will be satisfied by the same secrets engine we just tested.
 
-### Add the vault provider to Terraform
+### Add the Vault provider to Terraform
 
-Notice that we are not setting any values here since the two pieces of information we need to connect to vault are the address and token, both of which are already stored in our environment variables (VAULT_ADDR and VAULT_TOKEN respectively):
+Notice that we are not setting any values here since the two pieces of information we need to connect to Vault are the address and token, both of which are already stored in our environment variables (VAULT_ADDR and VAULT_TOKEN respectively):
 
 ```hcl
 provider "vault" { }
@@ -293,9 +293,9 @@ data "vault_generic_secret" "azure_spn" {
 
 ### Add the azurerm provider to Terraform
 
-Again, notice that we are not setting some values here since the some of information we need to connect to azure, tenant and subscription ids, are already stored in our environment variables (ARM_TENANT_ID and ARM_SUBSCRIPTION_ID respectively).
+Again, notice that we are not setting some of the values here since some of the information we need to connect to Azure ( tenant and subscription ids) is already stored in our environment variables ($ARM_TENANT_ID and $ARM_SUBSCRIPTION_ID respectively).
 
-We also use the vault output to wire up the azurerm provider:
+We also use the Vault output to wire up the azurerm provider:
 
 ```hcl
 provider "azurerm" {
@@ -331,7 +331,7 @@ Terraform will perform the following actions:
   + azurerm_resource_group.test
       id:               <computed>
       location:         "centralus"
-      name:             "terraform-vault-rf"
+      name:             "terraform-vault-rg"
       tags.%:           "1"
       tags.environment: "Production"
 
@@ -339,7 +339,7 @@ Terraform will perform the following actions:
 Plan: 1 to add, 0 to change, 0 to destroy.
 ```
 
-Everything looks good, what do we think will happen if we run a `terraform apply`?
+Everything looks good. What do we think will happen if we run a `terraform apply`?
 
 Let's see...
 
@@ -356,12 +356,22 @@ StatusCode=403 -- Original Error: autorest/azure: Service returned an error.
 Status=403 Code="AuthorizationFailed" 
 Message="The client '<UUID>' with object id '<UUID>' does not have authorization to perform action
  'Microsoft.Resources/subscriptions/resourcegroups/write' over scope '/subscriptions/<UUID>/resourcegroups/
- terraform-vault-rf'."
+ terraform-vault-rg'."
 ```
 
 ### What happened?
 
-Taking a look at the data source from vault, we can see the request was for the "reader" role, not "contributor". Updating this value and re-running Terraform we see success!
+Taking a look at the data source from Vault, we can see the request was for the "reader" role, not "contributor". Updating this value and re-running Terraform we see success!
+
+Update vault_generic_secret data source to the contributor path: 
+
+```hcl
+data "vault_generic_secret" "azure_spn" {
+  path = "azure/creds/contributor"
+}
+```
+
+Re-run the terraform apply:
 
 ```sh
 $ terraform apply
@@ -376,7 +386,7 @@ Terraform will perform the following actions:
   + azurerm_resource_group.test
       id:               <computed>
       location:         "centralus"
-      name:             "terraform-vault-rf"
+      name:             "terraform-vault-rg"
       tags.%:           "1"
       tags.environment: "Production"
 
@@ -391,32 +401,33 @@ Do you want to perform these actions?
 
 azurerm_resource_group.test: Creating...
   location:         "" => "centralus"
-  name:             "" => "terraform-vault-rf"
+  name:             "" => "terraform-vault-rg"
   tags.%:           "" => "1"
   tags.environment: "" => "Production"
-azurerm_resource_group.test: Creation complete after 1s (ID: /subscriptions/<Subscription Id>/resourceGroups/terraform-vault-rf)
+azurerm_resource_group.test: Creation complete after 1s (ID: /subscriptions/<Subscription Id>/resourceGroups/terraform-vault-rg)
 
 Apply complete! Resources: 1 added, 0 changed, 0 destroyed.
 ```
 
 ## Pros and Cons
 
-This approach of leveraging vault to manage Terraform connections to Azure has some great benefits but also a few drawbacks that will determine how viable a solution this is in your automation workflow.
+This approach of leveraging Vault to manage Terraform connections to Azure has some great benefits but also a few drawbacks that will determine how viable a solution this is in your automation workflow.
 
 **Pros**
 
-* Generating Service Principals can have granular scope by implementing several vault roles
+* Generating Service Principals can have granular scope by implementing several Vault roles
 * Service Principal secrets are less visible
-* Short lived Service Principals that are revokable give me better security practices
+* Short-lived, revokable Service Principal management is a great security practice
+* Vault will automatically revoke expired credentials
 * Terraform's Vault provider makes easy work of getting secrets
 
 **Cons**
 
 * Service Principal creation can take from 10 seconds up to a couple minutes
 * Each time `plan` OR `apply` is ran, a new Service Principal is generated
-  * As of the latest release of Vault 1.1.0, [Vault Agent Caching](https://www.vaultproject.io/docs/agent/caching/index.html) would alleviate this.
-* The Vault Service Principal that is required needs advanced permissions in Active Directory
+  * As of the latest release of Vault 1.1.0, [Vault Agent Caching](https://www.vaultproject.io/docs/agent/caching/index.html) would alleviate this
+* The Vault Service Principal that is required needs advanced permissions in Azure Active Directory
 
 ## Conclusion
 
-In this blog we have walked through how to dynamically generate Azure Service Principals using Hashicorp Vault. The granularity that a vault role enables give us great control over who can request which type of Service Principals they can create. Furthermore, short lived secrets limit the exposure and eliminate hard coded secrets within automation pipelines.
+In this blog we have walked through how to dynamically generate Azure Service Principals using Hashicorp Vault. The granularity that a Vault role enables, give us great control over who can request which type of Service Principals they can create. Furthermore, short-lived and auto revokable secrets limit the exposure and eliminate hard coded secrets within automation pipelines.
